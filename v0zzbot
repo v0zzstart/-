@@ -1,0 +1,44 @@
+import openai_secret_manager
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import openai
+
+# Set up API keys
+secrets = openai_secret_manager.get_secret("openai")
+openai.api_key = secrets["api_key"]
+
+# Set up Telegram bot
+bot = telegram.Bot(token='6062367159:AAH2sa6F5pC3MHwKtBYO8X6KOYEeiAqfarg')
+
+# Define a function to generate a response using OpenAI
+def generate_response(prompt):
+    model_engine = "text-davinci-002"
+    response = openai.Completion.create(
+        engine=model_engine,
+        prompt=prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+    return response.choices[0].text.strip()
+
+# Define a function to handle incoming messages
+def handle_message(update, context):
+    # Get the user's message
+    message = update.message.text
+    # Generate a response using OpenAI
+    response = generate_response(message)
+    # Send the response back to the user
+    bot.send_message(chat_id=update.effective_chat.id, text=response)
+
+# Set up the Telegram updater and dispatcher
+updater = Updater(token='YOUR_TELEGRAM_BOT_TOKEN', use_context=True)
+dispatcher = updater.dispatcher
+
+# Set up a message handler
+message_handler = MessageHandler(Filters.text & ~Filters.command, handle_message)
+dispatcher.add_handler(message_handler)
+
+# Start the bot
+updater.start_polling()
